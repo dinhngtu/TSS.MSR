@@ -343,7 +343,7 @@ IssueCertificate(
     SYSTEMTIME systemTime = {0};
     PBYTE pbEncoded = NULL;
     DWORD cbEncoded = 0;
-    CRYPT_ALGORITHM_IDENTIFIER certAlgId = {szOID_RSA_SHA1RSA,
+    CRYPT_ALGORITHM_IDENTIFIER certAlgId = {szOID_RSA_SHA256RSA,
                                             {0, NULL}};
 
     // Subject encoding structure
@@ -467,7 +467,7 @@ IssueCertificate(
     certInfo.dwVersion = CERT_V3;
     certInfo.SerialNumber.cbData = sizeof(serialNumber);
     certInfo.SerialNumber.pbData = (PBYTE)&serialNumber;
-    certInfo.SignatureAlgorithm.pszObjId = szOID_RSA_SHA1RSA;
+    certInfo.SignatureAlgorithm.pszObjId = szOID_RSA_SHA256RSA;
     certInfo.Issuer.cbData = pCaCert->pCertInfo->Issuer.cbData;
     certInfo.Issuer.pbData = pCaCert->pCertInfo->Issuer.pbData;
     GetSystemTime(&systemTime);
@@ -536,12 +536,12 @@ IssueCertificate(
         hr = HRESULT_FROM_WIN32(GetLastError());
         goto Cleanup;
     }
-    keyIdInfo.KeyId.cbData = SHA1_DIGEST_SIZE;
+    keyIdInfo.KeyId.cbData = SHA256_DIGEST_SIZE;
     if(FAILED(hr = AllocateAndZero((PVOID*)&keyIdInfo.KeyId.pbData, keyIdInfo.KeyId.cbData)))
     {
         goto Cleanup;
     }
-    if(!CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM,
+    if(!CryptHashCertificate2(BCRYPT_SHA256_ALGORITHM,
                               0,
                               NULL,
                               pbEncoded,
@@ -728,7 +728,7 @@ GetActivePcrAlgorithm(
     NCRYPT_PROV_HANDLE hProv = NULL;
     BYTE pcrTable[TPM_AVAILABLE_PLATFORM_PCRS * MAX_DIGEST_SIZE] = {0};
     DWORD cbPcrTable = sizeof(pcrTable);
-    UINT16 algorithmId = TPM_API_ALG_ID_SHA1;
+    UINT16 algorithmId = TPM_API_ALG_ID_SHA256;
 
     if (FAILED(hr = HRESULT_FROM_WIN32(NCryptOpenStorageProvider(
                             &hProv,
@@ -1556,8 +1556,8 @@ Generate the required number of random bytes for a PCR table.
     UINT32 cbRandom = 0;
     UINT32 cbSeedLen = 0;
     DWORD dwFlags = 0;
-    UINT16 pcrAlgorithm = TPM_API_ALG_ID_SHA1;
-    UINT32 digestSize = SHA1_DIGEST_SIZE;
+    UINT16 pcrAlgorithm = TPM_API_ALG_ID_SHA256;
+    UINT32 digestSize = SHA256_DIGEST_SIZE;
 
     // Paranoid check
     if(argc < 2)
@@ -1958,7 +1958,7 @@ usageAuth value and a migrationAuth
     LPCWSTR optionalPIN = L"This key requires usage consent and an optional PIN.";
     LPCWSTR mandatoryPIN = L"This key has a mandatory PIN.";
     NCRYPT_UI_POLICY rgbUiPolicy = {1, 0, L"PCPTool", NULL, NULL};
-    UINT16 pcrAlgorithm = TPM_API_ALG_ID_SHA1;
+    UINT16 pcrAlgorithm = TPM_API_ALG_ID_SHA256;
     UINT32 numberOfPcrs;
     UINT32 currentPcr;
 
@@ -2276,7 +2276,7 @@ the key and Identity Binding, that is the proof of possession.
     DWORD cbIdBinding = 0;
     BYTE pbAikPub[1024] = {0};
     DWORD cbAikPub = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     UINT32 result = 0;
     BOOLEAN tUIRequested = false;
     LPCWSTR optionalPIN = L"This AIK requires usage consent and an optional PIN.";
@@ -2314,7 +2314,7 @@ the key and Identity Binding, that is the proof of possession.
     if((argc > 4) && (argv[4] != NULL) && (wcslen(argv[4]) != 0))
     {
         nonce = argv[4];
-        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                     NULL,
                                                     0,
                                                     (PBYTE)nonce,
@@ -2648,7 +2648,7 @@ that encrypts a certificate for the AIK for example.
     UINT32 cbEkPub = 0;
     PBYTE pbAikPub = NULL;
     UINT32 cbAikPub = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     PBYTE pbActivationBlob = NULL;
     UINT32 cbActivationBlob = 0;
     UINT32 result = 0;
@@ -2746,7 +2746,7 @@ that encrypts a certificate for the AIK for example.
     if(argc > 6)
     {
         nonce = argv[6];
-        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                     NULL,
                                                     0,
                                                     (PBYTE)nonce,
@@ -3380,7 +3380,7 @@ or in the machine context.
         hr = S_OK;
         BYTE pubKey[512] = {0};
         BCRYPT_RSAKEY_BLOB* pPubKey = (BCRYPT_RSAKEY_BLOB*) pubKey;
-        BYTE pubKeyDigest[SHA1_DIGEST_SIZE] = {0};
+        BYTE pubKeyDigest[SHA256_DIGEST_SIZE] = {0};
 
         while(SUCCEEDED(hr))
         {
@@ -3482,7 +3482,7 @@ or in the machine context.
                                   pPubKey->cbModulus +
                                   pPubKey->cbPrime1 +
                                   pPubKey->cbPrime2) ||
-                   (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+                   (FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                             NULL,
                                                             0,
                                                             &pubKey[sizeof(BCRYPT_RSAKEY_BLOB) +
@@ -4374,7 +4374,7 @@ proof.
     PCWSTR aikAuthValue = NULL;
     PBYTE pbAttestation = NULL;
     UINT32 cbAttestation = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     UINT32 result = 0;
 
     // Paranoid check
@@ -4408,7 +4408,7 @@ proof.
     if(argc > 4)
     {
         nonce = argv[4];
-        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                     NULL,
                                                     0,
                                                     (PBYTE)nonce,
@@ -4592,7 +4592,7 @@ PcpToolGetPCRs(
     NCRYPT_PROV_HANDLE hProv = NULL;
     BYTE pcrTable[TPM_AVAILABLE_PLATFORM_PCRS * MAX_DIGEST_SIZE] = {0};
     DWORD cbPcrTable = sizeof(pcrTable);
-    DWORD digestSize = SHA1_DIGEST_SIZE;
+    DWORD digestSize = SHA256_DIGEST_SIZE;
 
     if(argc > 2)
     {
@@ -5016,7 +5016,7 @@ proof.
     UINT32 cbAttestation = 0;
     PBYTE pbAikPub = NULL;
     UINT32 cbAikPub = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     UINT32 cbNonceDigest = sizeof(nonceDigest);
 
     // Paranoid check
@@ -5099,7 +5099,7 @@ proof.
         nonce = argv[4];
         if(wcslen(nonce) > 0)
         {
-            if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+            if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                         NULL,
                                                         0,
                                                         (PBYTE)nonce,
@@ -5304,7 +5304,7 @@ PcpToolGetKeyAttestationFromKey(
     PBYTE pbAttestation = NULL;
     UINT32 cbAttestation = 0;
     WCHAR szAikName[MAX_PATH] = L"";
-    BYTE aikDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE aikDigest[SHA256_DIGEST_SIZE] = {0};
 
     // Paranoid check
     if(argc < 2)
@@ -5398,7 +5398,7 @@ PcpToolGetKeyAttestationFromKey(
 
     // Output results
     wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
-    for(UINT32 n = 0; n < SHA1_DIGEST_SIZE; n++)
+    for(UINT32 n = 0; n < SHA256_DIGEST_SIZE; n++)
     {
             wprintf(L"%02x", aikDigest[n]);
     }
@@ -5434,11 +5434,11 @@ PcpToolGetKeyAttestation(
     PCWSTR aikAuthValue = NULL;
     PBYTE pbAttestation = NULL;
     UINT32 cbAttestation = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     BYTE aikPub[512] = {0};
     BCRYPT_RSAKEY_BLOB* pAikPub = (BCRYPT_RSAKEY_BLOB*)aikPub;
     UINT32 cbAikPub = 0;
-    BYTE aikDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE aikDigest[SHA256_DIGEST_SIZE] = {0};
     UINT32 result = 0;
 
     // Paranoid check
@@ -5486,7 +5486,7 @@ PcpToolGetKeyAttestation(
     if(argc > 5)
     {
         nonce = argv[5];
-        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                       NULL,
                                       0,
                                       (PBYTE)nonce,
@@ -5583,7 +5583,7 @@ PcpToolGetKeyAttestation(
         hr = E_FAIL;
         goto Cleanup;
     }
-    if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+    if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                   NULL,
                                   0,
                                   &aikPub[sizeof(BCRYPT_RSAKEY_BLOB) +
@@ -5637,7 +5637,7 @@ PcpToolGetKeyAttestation(
 
     // Output results
     wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, aikName);
-    for(UINT32 n = 0; n < SHA1_DIGEST_SIZE; n++)
+    for(UINT32 n = 0; n < SHA256_DIGEST_SIZE; n++)
     {
             wprintf(L"%02x", aikDigest[n]);
     }
@@ -5683,14 +5683,14 @@ PcpToolValidateKeyAttestation(
     PBYTE pbPcrTable = NULL;
     UINT32 cbPcrTable = 0;
     UINT32 pcrMask = 0;
-    UINT16 pcrAlgId = TPM_API_ALG_ID_SHA1;
+    UINT16 pcrAlgId = TPM_API_ALG_ID_SHA256;
     BCRYPT_ALG_HANDLE hAlg = NULL;
     BCRYPT_KEY_HANDLE hAik = NULL;
     PBYTE pbAttestation = NULL;
     UINT32 cbAttestation = 0;
     PBYTE pbAikPub = NULL;
     UINT32 cbAikPub = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     UINT32 cbNonceDigest = sizeof(nonceDigest);
     UINT32 currentPcr;
     UINT32 numberOfPcrs;
@@ -5776,7 +5776,7 @@ PcpToolValidateKeyAttestation(
         if(wcslen(nonce) > 0)
         {
             nonce = argv[4];
-            if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+            if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                         NULL,
                                                         0,
                                                         (PBYTE)nonce,
@@ -5832,7 +5832,7 @@ PcpToolValidateKeyAttestation(
         }
     }
 
-    // Optional parameter: pcrAlgorithm (defaults to SHA1)
+    // Optional parameter: pcrAlgorithm (defaults to SHA256)
     if (argc > 7)
     {
         int argument = 0; // need int for scanf("%x")
@@ -6445,7 +6445,7 @@ PcpToolWrapPlatformKey(
     UINT32 pcrMask = 0;
     UINT32 currentPcr;
     UINT32 numberOfPcrs = 0;
-    UINT16 pcrAlgId = TPM_API_ALG_ID_SHA1; // TPM_ALG_SHA
+    UINT16 pcrAlgId = TPM_API_ALG_ID_SHA256; // TPM_ALG_SHA
     LPWSTR pcrsName = NULL;
     UINT32 cbPcrTable = 0;
     PBYTE pbPcrTable = NULL;
@@ -7061,7 +7061,7 @@ PcpToolGetVscKeyAttestationFromKey(
     WCHAR szAikName[MAX_PATH] = L"";
     PCWSTR attestationFile = NULL;
     PCWSTR aikName = NULL;
-    BYTE aikDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE aikDigest[SHA256_DIGEST_SIZE] = {0};
     PBYTE pbAttestation = NULL;
     UINT32 cbAttestation = 0;
 
@@ -7371,7 +7371,7 @@ PcpToolGetVscKeyAttestationFromKey(
 
     // Output results
     wprintf(L"<KeyAttestation size=\"%u\" aikName=\"%s\" aikDigest=\"", cbAttestation, szAikName);
-    for(UINT32 n = 0; n < SHA1_DIGEST_SIZE; n++)
+    for(UINT32 n = 0; n < SHA256_DIGEST_SIZE; n++)
     {
             wprintf(L"%02x", aikDigest[n]);
     }
@@ -7684,7 +7684,7 @@ that encrypts the certificate for the AIK.
     UINT32 cbEkPub = 0;
     PBYTE pbAikPub = NULL;
     UINT32 cbAikPub = 0;
-    BYTE nonceDigest[SHA1_DIGEST_SIZE] = {0};
+    BYTE nonceDigest[SHA256_DIGEST_SIZE] = {0};
     PBYTE pbActivationBlob = NULL;
     UINT32 cbActivationBlob = 0;
     PCCERT_CONTEXT pCaCert = NULL;
@@ -7787,7 +7787,7 @@ that encrypts the certificate for the AIK.
     if(argc > 6)
     {
         nonce = argv[6];
-        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA1_ALGORITHM,
+        if(FAILED(hr = TpmAttiShaHash(BCRYPT_SHA256_ALGORITHM,
                                                     NULL,
                                                     0,
                                                     (PBYTE)nonce,
